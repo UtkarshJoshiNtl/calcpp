@@ -1,6 +1,6 @@
 # CalcCpp
 
-A small scientific calculator written in 100% C++ with a native Windows GUI.
+A small scientific calculator written in 100% C++ with cross-platform frontends.
 
 ## Scope
 
@@ -15,23 +15,35 @@ This first implementation focuses on a simple scientific calculator:
 
 ## Structure
 
-- `src/main.cpp` - application entry point
-- `src/gui/` - Win32 window and button layout
+- `src/main.cpp` - Windows Win32 GUI entrypoint (optional)
+- `src/gui/` - Win32 window and button layout (Windows-only)
+- `src/gui_sdl/` - cross-platform SDL2-based GUI (recommended for Linux/macOS)
 - `src/operator/` - expression parsing and evaluation
 
 ## Build
 
-This project uses CMake and the native Windows toolchain.
+This project uses CMake and supports cross-platform builds. The Win32 GUI target is optional — use the SDL2 GUI for a single cross-platform binary.
 
 ```bash
-cmake -S . -B build
-cmake --build build
+# build CLI and SDL GUI (recommended)
+cmake -S . -B build -DBUILD_CLI=ON -DBUILD_SDL_GUI=ON
+cmake --build build --parallel 2
+
+# build only CLI
+cmake -S . -B build -DBUILD_CLI=ON
+cmake --build build --parallel 2
+
+# On Windows (MSVC) build Win32 GUI target (optional)
+cmake -S . -B build -A x64
+cmake --build build --config Release --parallel 2
 ```
 
 ## Notes
 
 - The project uses only C++ source code.
-- The GUI is implemented with the Win32 API, so no extra GUI runtime is required.
+- The repository contains two GUIs:
+	- a Win32 GUI implementation (`src/gui/`) that is Windows-only and provided for native integration;
+	- a cross-platform SDL2 GUI (`src/gui_sdl/`) which is the recommended frontend for Linux/macOS and CI builds.
 - Trigonometric functions use radians.
 
 ## Remaining Plan
@@ -55,15 +67,7 @@ The implementation should continue in small chunks:
 
 ## Testing and Notes
 
-- Unit tests for the expression evaluator are provided in `tests/expression_evaluator_tests.cpp` and can be built/run on Linux (or any platform with a C++ toolchain) without the Win32 GUI.
-
-- To build and run the tests (Linux example):
-
-```bash
-cmake -S . -B build -DBUILD_TESTS=ON
-cmake --build build --target calc_tests
-./build/calc_tests
-```
+(Note: tests were removed in this branch; evaluator validated via CI and manual smoke tests.)
 
 - The GUI is implemented with the Win32 API and requires building on Windows (MSVC or a MinGW toolchain). To build the GUI on Windows use:
 
@@ -81,11 +85,11 @@ This project now includes:
 - A command-line frontend: `calc_cli` (built with `BUILD_CLI=ON`, default `ON`).
 - An optional SDL2-based GUI: `CalcCppSDL` (enabled with `-DBUILD_SDL_GUI=ON`). The SDL2 GUI depends on `SDL2` and `SDL2_ttf` development packages.
 
-Build CLI and tests on Linux (WSL):
+Build CLI on Linux (WSL):
 
 ```bash
-cmake -S . -B build -DBUILD_TESTS=ON -DBUILD_CLI=ON
-cmake --build build --target calc_cli
+cmake -S . -B build -DBUILD_CLI=ON
+cmake --build build --target calc_cli --parallel 2
 ./build/calc_cli
 ```
 
@@ -108,4 +112,4 @@ cmake -S . -B build-windows -DCMAKE_TOOLCHAIN_FILE=/usr/share/mingw/toolchain.cm
 cmake --build build-windows --config Release
 ```
 
-If you prefer a native GTK GUI instead of SDL2, tell me and I will implement it.
+If you prefer a native GTK/Qt/wxWidgets GUI instead of SDL2, tell me and I will implement it.

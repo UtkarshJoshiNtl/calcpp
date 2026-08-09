@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cwchar>
+#include <cwctype>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
@@ -101,11 +102,11 @@ private:
             return value;
         }
 
-        if (position_ < expression_.size() && (std::iswdigit(expression_[position_]) || expression_[position_] == L'.')) {
+        if (position_ < expression_.size() && (iswdigit(expression_[position_]) || expression_[position_] == L'.')) {
             return ParseNumber();
         }
 
-        if (position_ < expression_.size() && std::iswalpha(expression_[position_])) {
+        if (position_ < expression_.size() && iswalpha(expression_[position_])) {
             return ParseIdentifier();
         }
 
@@ -125,7 +126,7 @@ private:
 
     double ParseIdentifier() {
         const std::size_t start = position_;
-        while (position_ < expression_.size() && std::iswalpha(expression_[position_])) {
+        while (position_ < expression_.size() && iswalpha(expression_[position_])) {
             ++position_;
         }
 
@@ -185,7 +186,7 @@ private:
     }
 
     void SkipWhitespace() {
-        while (position_ < expression_.size() && std::iswspace(expression_[position_])) {
+        while (position_ < expression_.size() && iswspace(expression_[position_])) {
             ++position_;
         }
     }
