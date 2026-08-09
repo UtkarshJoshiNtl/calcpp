@@ -46,6 +46,13 @@ cmake --build build --config Release --parallel 2
 	- a cross-platform SDL2 GUI (`src/gui_sdl/`) which is the recommended frontend for Linux/macOS and CI builds.
 - Trigonometric functions use radians.
 
+## Download binaries
+
+- Tag a release with `v*` (for example `v0.1.0`) to trigger `.github/workflows/release.yml`.
+- The workflow publishes downloadable release assets for:
+  - Linux: `calc_cli-linux`, `CalcCppSDL-linux`
+  - Windows: `calc_cli-windows.exe`, `CalcCpp-windows.exe`, `calc_cli-windows-cross.exe`
+
 ## Remaining Plan
 
 The first implementation chunk is in place. The remaining work will stay small and reviewable:
