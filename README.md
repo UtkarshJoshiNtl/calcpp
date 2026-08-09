@@ -73,3 +73,39 @@ cmake --build build --config Release
 ```
 
 Note: This repository's `CMakeLists.txt` includes an optional `calc_tests` target so the evaluator can be validated on non-Windows platforms.
+
+## Linux and Cross-platform GUI
+
+This project now includes:
+
+- A command-line frontend: `calc_cli` (built with `BUILD_CLI=ON`, default `ON`).
+- An optional SDL2-based GUI: `CalcCppSDL` (enabled with `-DBUILD_SDL_GUI=ON`). The SDL2 GUI depends on `SDL2` and `SDL2_ttf` development packages.
+
+Build CLI and tests on Linux (WSL):
+
+```bash
+cmake -S . -B build -DBUILD_TESTS=ON -DBUILD_CLI=ON
+cmake --build build --target calc_cli
+./build/calc_cli
+```
+
+Build SDL GUI (if SDL2 and SDL2_ttf are installed):
+
+```bash
+# install dependencies on Debian/Ubuntu
+sudo apt update && sudo apt install libsdl2-dev libsdl2-ttf-dev
+
+cmake -S . -B build -DBUILD_SDL_GUI=ON
+cmake --build build --target CalcCppSDL
+./build/CalcCppSDL
+```
+
+Cross-compile a Windows `.exe` from WSL using `mingw-w64` (example):
+
+```bash
+sudo apt install mingw-w64
+cmake -S . -B build-windows -DCMAKE_TOOLCHAIN_FILE=/usr/share/mingw/toolchain.cmake -G "Unix Makefiles"
+cmake --build build-windows --config Release
+```
+
+If you prefer a native GTK GUI instead of SDL2, tell me and I will implement it.
