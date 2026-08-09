@@ -2,25 +2,28 @@ cmake_minimum_required(VERSION 3.20)
 
 project(CalcCpp VERSION 0.1.0 LANGUAGES CXX)
 
-add_executable(CalcCpp WIN32
-    src/main.cpp
-    src/gui/main_window.cpp
-    src/operator/expression_evaluator.cpp
-)
 
-target_include_directories(CalcCpp PRIVATE src)
+if (WIN32)
+    add_executable(CalcCpp WIN32
+        src/main.cpp
+        src/gui/main_window.cpp
+        src/operator/expression_evaluator.cpp
+    )
 
-target_compile_features(CalcCpp PRIVATE cxx_std_17)
+    target_include_directories(CalcCpp PRIVATE src)
 
-target_compile_definitions(CalcCpp PRIVATE UNICODE _UNICODE)
+    target_compile_features(CalcCpp PRIVATE cxx_std_17)
 
-if (MSVC)
-    target_compile_options(CalcCpp PRIVATE /W4 /permissive-)
-else()
-    target_compile_options(CalcCpp PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_definitions(CalcCpp PRIVATE UNICODE _UNICODE)
+
+    if (MSVC)
+        target_compile_options(CalcCpp PRIVATE /W4 /permissive-)
+    else()
+        target_compile_options(CalcCpp PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+
+    target_link_libraries(CalcCpp PRIVATE user32 gdi32)
 endif()
-
-target_link_libraries(CalcCpp PRIVATE user32 gdi32)
 
 option(BUILD_CLI "Build command-line frontend" ON)
 option(BUILD_SDL_GUI "Build SDL2 GUI frontend" OFF)

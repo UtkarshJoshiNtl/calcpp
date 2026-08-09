@@ -19,7 +19,7 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -DBUILD_CLI=ON -DBUILD_SDL_GUI=ON
       - name: Build
-        run: cmake --build build -- -j 2
+        run: cmake --build build --parallel 2
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: cmake -S . -B build -A x64 -DBUILD_CLI=ON
       - name: Build
-        run: cmake --build build --config Release -- -m:2
+        run: cmake --build build --config Release --parallel 2
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
