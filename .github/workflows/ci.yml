@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-linux:
+    name: Build and Test (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential libsdl2-dev libsdl2-ttf-dev
+      - name: Configure
+        run: cmake -S . -B build -DBUILD_TESTS=ON -DBUILD_CLI=ON -DBUILD_SDL_GUI=ON
+      - name: Build
+        run: cmake --build build -- -j 2
+      - name: Run tests
+        run: ./build/calc_tests
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            build/calc_cli
+            build/CalcCppSDL
+
+  build-windows:
+    name: Build (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        shell: bash
+        run: cmake -S . -B build -A x64 -DBUILD_CLI=ON -DBUILD_TESTS=ON
+      - name: Build
+        run: cmake --build build --config Release -- -m:2
+      - name: Run tests
+        run: build\\calc_tests.exe
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            build\\Release\\calc_cli.exe
+            build\\Release\\CalcCpp.exe

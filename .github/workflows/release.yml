@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential mingw-w64 libsdl2-dev libsdl2-ttf-dev
+      - name: Build Linux binaries
+        run: |
+          cmake -S . -B build -DBUILD_CLI=ON -DBUILD_TESTS=ON -DBUILD_SDL_GUI=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --target calc_cli calc_tests CalcCppSDL -- -j 2
+      - name: Run Linux tests
+        run: ./build/calc_tests
+      - name: Cross-compile Windows binaries (mingw)
+        run: |
+          cmake -S . -B build-windows -DCMAKE_SYSTEM_NAME=Windows \
+            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+            -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+            -DCMAKE_BUILD_TYPE=Release -DBUILD_CLI=ON -DBUILD_SDL_GUI=OFF
+          cmake --build build-windows --target calc_cli CalcCpp -- -j 2
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload release assets (linux)
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/calc_cli
+          asset_name: calc_cli-linux
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload release assets (linux SDL)
+        if: exists('build/CalcCppSDL')
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/CalcCppSDL
+          asset_name: CalcCppSDL-linux
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload release assets (windows)
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build-windows/calc_cli.exe
+          asset_name: calc_cli-windows.exe
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload release assets (windows GUI)
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build-windows/CalcCpp.exe
+          asset_name: CalcCpp-windows.exe
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
