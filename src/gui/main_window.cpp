@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <string>
+#include <cwctype>
 
 #include "operator/expression_evaluator.h"
 
@@ -318,7 +319,30 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
         SetWindowTitle();
         CreateChildControls();
         LayoutControls();
+        SetFocus(window_);
         return 0;
+    case WM_CHAR: {
+        const wchar_t ch = static_cast<wchar_t>(wparam);
+        if (iswprint(ch)) {
+            std::wstring s(1, ch);
+            AppendText(s);
+        }
+        return 0;
+    }
+    case WM_KEYDOWN:
+        switch (wparam) {
+        case VK_BACK:
+            RemoveLastCharacter();
+            return 0;
+        case VK_RETURN:
+            EvaluateExpression();
+            return 0;
+        case VK_ESCAPE:
+            ClearDisplay();
+            return 0;
+        default:
+            break;
+        }
     case WM_SIZE:
         LayoutControls();
         return 0;
