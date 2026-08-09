@@ -72,23 +72,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download linux calc_cli
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: calc_cli_linux
       - name: Download linux SDL GUI
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: calc_sdl_linux
       - name: Download windows cli (cross)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: calc_cli_windows_cross
       - name: Download windows native artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: calc_cli_windows_native
       - name: Download windows GUI artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: CalcCpp_windows
       - name: List downloaded artifacts
