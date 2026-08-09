@@ -1,1 +1,0 @@
-/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/CalcCpp.dir/link.d CMakeFiles/CalcCpp.dir/src/main.cpp.o CMakeFiles/CalcCpp.dir/src/gui/main_window.cpp.o CMakeFiles/CalcCpp.dir/src/operator/expression_evaluator.cpp.o -o CalcCpp  -luser32 -lgdi32

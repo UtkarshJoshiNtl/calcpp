@@ -1,4 +1,0 @@
-/home/Code1/dev/Projects/College/CalcCpp/build/CMakeFiles/CalcCpp.dir
-/home/Code1/dev/Projects/College/CalcCpp/build/CMakeFiles/calc_tests.dir
-/home/Code1/dev/Projects/College/CalcCpp/build/CMakeFiles/edit_cache.dir
-/home/Code1/dev/Projects/College/CalcCpp/build/CMakeFiles/rebuild_cache.dir

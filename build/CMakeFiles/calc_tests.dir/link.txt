@@ -1,1 +1,0 @@
-/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/calc_tests.dir/link.d CMakeFiles/calc_tests.dir/tests/expression_evaluator_tests.cpp.o CMakeFiles/calc_tests.dir/src/operator/expression_evaluator.cpp.o -o calc_tests

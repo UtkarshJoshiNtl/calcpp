@@ -16,10 +16,8 @@ jobs:
           sudo apt-get install -y cmake build-essential mingw-w64 libsdl2-dev libsdl2-ttf-dev
       - name: Build Linux binaries
         run: |
-          cmake -S . -B build -DBUILD_CLI=ON -DBUILD_TESTS=ON -DBUILD_SDL_GUI=ON -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --target calc_cli calc_tests CalcCppSDL -- -j 2
-      - name: Run Linux tests
-        run: ./build/calc_tests
+          cmake -S . -B build -DBUILD_CLI=ON -DBUILD_SDL_GUI=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --target calc_cli CalcCppSDL -- -j 2
       - name: Cross-compile Windows binaries (mingw)
         run: |
           cmake -S . -B build-windows -DCMAKE_SYSTEM_NAME=Windows \

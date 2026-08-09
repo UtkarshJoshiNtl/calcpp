@@ -1,0 +1,29 @@
+# Build outputs
+/build/
+/build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Editor and OS files
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Compiled objects and binaries
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Release artifacts
+calc_cli
+CalcCppSDL
+calc_tests
+
+# Logs
+*.log
