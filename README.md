@@ -52,3 +52,24 @@ The implementation should continue in small chunks:
 2. GUI interaction and keyboard support.
 3. Layout and polish.
 4. Final behavior checks and cleanup.
+
+## Testing and Notes
+
+- Unit tests for the expression evaluator are provided in `tests/expression_evaluator_tests.cpp` and can be built/run on Linux (or any platform with a C++ toolchain) without the Win32 GUI.
+
+- To build and run the tests (Linux example):
+
+```bash
+cmake -S . -B build -DBUILD_TESTS=ON
+cmake --build build --target calc_tests
+./build/calc_tests
+```
+
+- The GUI is implemented with the Win32 API and requires building on Windows (MSVC or a MinGW toolchain). To build the GUI on Windows use:
+
+```bash
+cmake -S . -B build
+cmake --build build --config Release
+```
+
+Note: This repository's `CMakeLists.txt` includes an optional `calc_tests` target so the evaluator can be validated on non-Windows platforms.
