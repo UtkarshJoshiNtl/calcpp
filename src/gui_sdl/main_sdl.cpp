@@ -1,6 +1,4 @@
-#if defined(_WIN32)
-// Placeholder: SDL GUI primarily targets Linux in this repo.
-#endif
+// Button-based SDL GUI for CalcCpp (scientific calculator)
 
 #include "operator/expression_evaluator.h"
 
@@ -8,6 +6,8 @@
 #include <SDL_ttf.h>
 
 #include <string>
+#include <vector>
+#include <memory>
 #include <locale>
 #include <codecvt>
 
@@ -23,6 +23,11 @@ static std::string ToString(const std::wstring& ws) {
     return conv.to_bytes(ws);
 }
 
+struct Button {
+    std::string label;
+    SDL_Rect rect;
+};
+
 int main(int argc, char** argv) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_Log("SDL_Init Error: %s", SDL_GetError());
@@ -34,7 +39,9 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    SDL_Window* win = SDL_CreateWindow("CalcCpp SDL", 100, 100, 640, 480, SDL_WINDOW_SHOWN);
+    const int winW = 480;
+    const int winH = 640;
+    SDL_Window* win = SDL_CreateWindow("CalcCpp - Scientific", 100, 100, winW, winH, SDL_WINDOW_SHOWN);
     if (!win) {
         SDL_Log("CreateWindow failed: %s", SDL_GetError());
         TTF_Quit();
@@ -50,7 +57,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    TTF_Font* font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24);
+    const char* fontPath = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+    TTF_Font* font = TTF_OpenFont(fontPath, 20);
     if (!font) {
         SDL_Log("OpenFont failed: %s", TTF_GetError());
         SDL_DestroyRenderer(ren);
@@ -62,15 +70,72 @@ int main(int argc, char** argv) {
 
     std::string input;
     bool running = true;
-    SDL_StartTextInput();
+
+    // Layout: top display, button grid below
+    const int displayH = 100;
+    const int gridX = 10;
+    const int gridY = displayH + 20;
+    const int cols = 4;
+    const int rows = 7;
+    const int btnW = (winW - gridX*2 - (cols-1)*10) / cols;
+    const int btnH = 60;
+
+    std::vector<std::string> labels = {
+        "sin","cos","tan","sqrt",
+        "ln","log","pi","e",
+        "(",")","^","/",
+        "7","8","9","*",
+        "4","5","6","-",
+        "1","2","3","+",
+        "0",".","C","="
+    };
+
+    std::vector<Button> buttons;
+    buttons.reserve(labels.size());
+    for (size_t i = 0; i < labels.size(); ++i) {
+        int r = i / cols;
+        int c = i % cols;
+        SDL_Rect rc;
+        rc.x = gridX + c * (btnW + 10);
+        rc.y = gridY + r * (btnH + 10);
+        rc.w = btnW;
+        rc.h = btnH;
+        buttons.push_back(Button{labels[i], rc});
+    }
 
     while (running) {
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
                 running = false;
-            } else if (e.type == SDL_TEXTINPUT) {
-                input += e.text.text;
+            } else if (e.type == SDL_MOUSEBUTTONDOWN) {
+                int mx = e.button.x;
+                int my = e.button.y;
+                for (const auto& b : buttons) {
+                    if (mx >= b.rect.x && mx <= b.rect.x + b.rect.w &&
+                        my >= b.rect.y && my <= b.rect.y + b.rect.h) {
+                        const std::string &L = b.label;
+                        if (L == "=") {
+                            const std::wstring expr = ToWString(input);
+                            const EvaluationResult r = ExpressionEvaluator::Evaluate(expr);
+                            if (r.success) {
+                                input = ToString(ExpressionEvaluator::FormatValue(r.value));
+                            } else {
+                                input = ToString(r.error);
+                            }
+                        } else if (L == "C") {
+                            input.clear();
+                        } else if (L == "pi") {
+                            input += "pi";
+                        } else if (L == "e") {
+                            input += "e";
+                        } else if (L == "sin" || L == "cos" || L == "tan" || L == "ln" || L == "log" || L == "sqrt") {
+                            input += L + std::string("(");
+                        } else {
+                            input += L;
+                        }
+                    }
+                }
             } else if (e.type == SDL_KEYDOWN) {
                 if (e.key.keysym.sym == SDLK_BACKSPACE && !input.empty()) {
                     input.pop_back();
@@ -83,26 +148,54 @@ int main(int argc, char** argv) {
                         input = ToString(r.error);
                     }
                 } else if (e.key.keysym.sym == SDLK_ESCAPE) {
-                    input.clear();
+                    running = false;
                 }
             }
         }
 
-        SDL_SetRenderDrawColor(ren, 30, 30, 30, 255);
+        // Render
+        SDL_SetRenderDrawColor(ren, 20, 20, 20, 255);
         SDL_RenderClear(ren);
 
-        // render input text
-        SDL_Color color = {255, 255, 255, 255};
-        SDL_Surface* surf = TTF_RenderUTF8_Blended(font, input.c_str(), color);
+        // Display background
+        SDL_SetRenderDrawColor(ren, 40, 40, 40, 255);
+        SDL_Rect disp = {0, 0, winW, displayH};
+        SDL_RenderFillRect(ren, &disp);
+
+        // Render input text right-aligned
+        SDL_Color txtColor = {255,255,255,255};
+        std::string displayStr = input.empty() ? "0" : input;
+        SDL_Surface* surf = TTF_RenderUTF8_Blended(font, displayStr.c_str(), txtColor);
         if (surf) {
             SDL_Texture* tex = SDL_CreateTextureFromSurface(ren, surf);
             int w = surf->w;
             int h = surf->h;
             SDL_FreeSurface(surf);
             if (tex) {
-                SDL_Rect dst = {10, 10, w, h};
+                SDL_Rect dst = {winW - w - 10, 10, w, h};
                 SDL_RenderCopy(ren, tex, nullptr, &dst);
                 SDL_DestroyTexture(tex);
+            }
+        }
+
+        // Draw buttons
+        for (const auto& b : buttons) {
+            SDL_SetRenderDrawColor(ren, 60, 60, 60, 255);
+            SDL_RenderFillRect(ren, &b.rect);
+            SDL_SetRenderDrawColor(ren, 90, 90, 90, 255);
+            SDL_RenderDrawRect(ren, &b.rect);
+            // render label centered
+            SDL_Surface* s = TTF_RenderUTF8_Blended(font, b.label.c_str(), txtColor);
+            if (s) {
+                SDL_Texture* t = SDL_CreateTextureFromSurface(ren, s);
+                int tw = s->w;
+                int th = s->h;
+                SDL_FreeSurface(s);
+                if (t) {
+                    SDL_Rect dst = {b.rect.x + (b.rect.w - tw)/2, b.rect.y + (b.rect.h - th)/2, tw, th};
+                    SDL_RenderCopy(ren, t, nullptr, &dst);
+                    SDL_DestroyTexture(t);
+                }
             }
         }
 
@@ -110,7 +203,6 @@ int main(int argc, char** argv) {
         SDL_Delay(16);
     }
 
-    SDL_StopTextInput();
     TTF_CloseFont(font);
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);
