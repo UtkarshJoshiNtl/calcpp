@@ -5,6 +5,7 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 
+#include <fstream>
 #include <string>
 #include <vector>
 #include <memory>
@@ -12,6 +13,31 @@
 #include <codecvt>
 
 using namespace calculator;
+
+namespace {
+
+const char* FindSystemFontPath() {
+    static const char* const kCandidates[] = {
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/noto/NotoSans-Regular.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "C:\\Windows\\Fonts\\arial.ttf",
+        "C:\\Windows\\Fonts\\segoeui.ttf",
+    };
+
+    for (const char* path : kCandidates) {
+        if (std::ifstream(path).good()) {
+            return path;
+        }
+    }
+    return nullptr;
+}
+
+}  // namespace
 
 static std::wstring ToWString(const std::string& s) {
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> conv;
@@ -57,10 +83,19 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    const char* fontPath = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+    const char* fontPath = FindSystemFontPath();
+    if (fontPath == nullptr) {
+        SDL_Log("No system font found; install fonts-dejavu-core or a TrueType font");
+        SDL_DestroyRenderer(ren);
+        SDL_DestroyWindow(win);
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
     TTF_Font* font = TTF_OpenFont(fontPath, 20);
     if (!font) {
-        SDL_Log("OpenFont failed: %s", TTF_GetError());
+        SDL_Log("OpenFont failed (%s): %s", fontPath, TTF_GetError());
         SDL_DestroyRenderer(ren);
         SDL_DestroyWindow(win);
         TTF_Quit();

@@ -9,6 +9,12 @@ namespace calculator {
 
 class MainWindow {
 public:
+    MainWindow() = default;
+    ~MainWindow();
+
+    MainWindow(const MainWindow&) = delete;
+    MainWindow& operator=(const MainWindow&) = delete;
+
     int Run(HINSTANCE instance, int show_command);
 
 private:
@@ -42,14 +48,20 @@ private:
     void HandleCommand(WORD command_id);
     void HandleButton(int button_id);
     void SetWindowTitle();
+    UINT GetDpi() const;
+    void RecreateFont(UINT dpi);
+    void SubclassDisplay();
+    void ApplyFontToControls();
 
     static LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
+    static LRESULT CALLBACK DisplayProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
     LRESULT HandleMessage(UINT message, WPARAM wparam, LPARAM lparam);
 
     HWND window_ = nullptr;
     HWND display_ = nullptr;
     HINSTANCE instance_ = nullptr;
     HFONT font_ = nullptr;
+    WNDPROC previous_display_proc_ = nullptr;
     std::vector<HWND> buttons_;
     std::vector<ButtonSpec> button_specs_;
 };

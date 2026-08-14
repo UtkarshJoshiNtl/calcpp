@@ -21,6 +21,13 @@ constexpr int kMinClientHeight = 560;
 
 }  // namespace
 
+MainWindow::~MainWindow() {
+    if (font_ != nullptr) {
+        DeleteObject(font_);
+        font_ = nullptr;
+    }
+}
+
 int MainWindow::Run(HINSTANCE instance, int show_command) {
     instance_ = instance;
     if (!RegisterClass()) {
@@ -78,7 +85,7 @@ bool MainWindow::CreateWindowInstance(int show_command) {
 }
 
 void MainWindow::CreateChildControls() {
-    font_ = static_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));
+    RecreateFont(GetDpi());
 
     display_ = CreateWindowExW(
         WS_EX_CLIENTEDGE,
@@ -95,6 +102,8 @@ void MainWindow::CreateChildControls() {
         nullptr);
 
     if (display_ != nullptr) {
+        SetWindowLongPtrW(display_, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+        SubclassDisplay();
         SendMessageW(display_, WM_SETFONT, reinterpret_cast<WPARAM>(font_), TRUE);
     }
 
@@ -154,6 +163,103 @@ void MainWindow::CreateChildControls() {
     }
 
     UpdateDisplay(L"0");
+}
+
+UINT MainWindow::GetDpi() const {
+    if (window_ != nullptr) {
+        using GetDpiForWindowFn = UINT(WINAPI*)(HWND);
+        HMODULE user32 = GetModuleHandleW(L"user32.dll");
+        if (user32 != nullptr) {
+            auto get_dpi = reinterpret_cast<GetDpiForWindowFn>(
+                GetProcAddress(user32, "GetDpiForWindow"));
+            if (get_dpi != nullptr) {
+                const UINT dpi = get_dpi(window_);
+                if (dpi != 0) {
+                    return dpi;
+                }
+            }
+        }
+    }
+
+    HDC screen = GetDC(nullptr);
+    const UINT dpi = static_cast<UINT>(GetDeviceCaps(screen, LOGPIXELSX));
+    ReleaseDC(nullptr, screen);
+    return dpi != 0 ? dpi : 96;
+}
+
+void MainWindow::RecreateFont(UINT dpi) {
+    if (font_ != nullptr) {
+        DeleteObject(font_);
+        font_ = nullptr;
+    }
+
+    const int height = -MulDiv(9, static_cast<int>(dpi), 72);
+    font_ = CreateFontW(
+        height,
+        0,
+        0,
+        0,
+        FW_NORMAL,
+        FALSE,
+        FALSE,
+        FALSE,
+        DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS,
+        CLIP_DEFAULT_PRECIS,
+        CLEARTYPE_QUALITY,
+        DEFAULT_PITCH | FF_DONTCARE,
+        L"Segoe UI");
+
+    if (font_ == nullptr) {
+        font_ = static_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));
+    }
+}
+
+void MainWindow::ApplyFontToControls() {
+    if (font_ == nullptr) {
+        return;
+    }
+
+    if (display_ != nullptr) {
+        SendMessageW(display_, WM_SETFONT, reinterpret_cast<WPARAM>(font_), TRUE);
+    }
+    for (HWND button : buttons_) {
+        SendMessageW(button, WM_SETFONT, reinterpret_cast<WPARAM>(font_), TRUE);
+    }
+}
+
+void MainWindow::SubclassDisplay() {
+    if (display_ == nullptr) {
+        return;
+    }
+    previous_display_proc_ = reinterpret_cast<WNDPROC>(
+        SetWindowLongPtrW(display_, GWLP_WNDPROC,
+                          reinterpret_cast<LONG_PTR>(
+                              reinterpret_cast<WNDPROC>(&MainWindow::DisplayProc))));
+}
+
+LRESULT CALLBACK MainWindow::DisplayProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
+    MainWindow* self = reinterpret_cast<MainWindow*>(
+        GetWindowLongPtrW(window, GWLP_USERDATA));
+
+    switch (message) {
+    case WM_CHAR:
+    case WM_KEYDOWN:
+    case WM_KEYUP:
+    case WM_SYSKEYDOWN:
+        if (self != nullptr && self->window_ != nullptr) {
+            SendMessageW(self->window_, message, wparam, lparam);
+            return 0;
+        }
+        break;
+    default:
+        break;
+    }
+
+    if (self != nullptr && self->previous_display_proc_ != nullptr) {
+        return CallWindowProcW(self->previous_display_proc_, window, message, wparam, lparam);
+    }
+    return DefWindowProcW(window, message, wparam, lparam);
 }
 
 void MainWindow::LayoutControls() {
@@ -256,9 +362,11 @@ void MainWindow::HandleCommand(WORD command_id) {
     for (const auto& spec : button_specs_) {
         if (spec.id == command_id) {
             HandleButton(spec.id);
-            return;
+            break;
         }
     }
+
+    SetFocus(window_);
 }
 
 void MainWindow::HandleButton(int button_id) {
@@ -343,12 +451,27 @@ LRESULT MainWindow::HandleMessage(UINT message, WPARAM wparam, LPARAM lparam) {
         default:
             break;
         }
+        return 0;
     case WM_SIZE:
         LayoutControls();
         return 0;
     case WM_COMMAND:
         HandleCommand(LOWORD(wparam));
         return 0;
+    case WM_DPICHANGED: {
+        const auto* suggested = reinterpret_cast<const RECT*>(lparam);
+        SetWindowPos(window_,
+                     nullptr,
+                     suggested->left,
+                     suggested->top,
+                     suggested->right - suggested->left,
+                     suggested->bottom - suggested->top,
+                     SWP_NOZORDER | SWP_NOACTIVATE);
+        RecreateFont(static_cast<UINT>(wparam));
+        ApplyFontToControls();
+        LayoutControls();
+        return 0;
+    }
     case WM_GETMINMAXINFO: {
         auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
         info->ptMinTrackSize.x = kMinClientWidth;

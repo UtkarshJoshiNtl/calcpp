@@ -14,7 +14,7 @@ if (WIN32)
 
     target_compile_features(CalcCpp PRIVATE cxx_std_17)
 
-    target_compile_definitions(CalcCpp PRIVATE UNICODE _UNICODE)
+    target_compile_definitions(CalcCpp PRIVATE UNICODE _UNICODE WINVER=0x0A00 _WIN32_WINNT=0x0A00)
 
     if (MSVC)
         target_compile_options(CalcCpp PRIVATE /W4 /permissive-)
